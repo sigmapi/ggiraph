@@ -38,6 +38,9 @@
 #' when parsing the svg result. This feature can be used to parse
 #' huge svg files by using \code{list(options = "HUGE")} but this
 #' is not recommanded.
+#' @param xml_callback A user defined function to be called after the xml for the svg is ready.
+#' It will be passed the xml data as an argument and its return value is not used.
+#' This can be used to manipulate the svg by inserting custom elements, like a background image.
 #' @param ... arguments passed on to \code{\link[rvg]{dsvg}}
 #' @examples
 #' library(ggplot2)
@@ -90,7 +93,7 @@
 #' @export
 girafe <- function(
   code, ggobj = NULL,  width = 0.9, pointsize = 12,
-  width_svg = 6, height_svg = 5, xml_reader_options = list(), ...) {
+  width_svg = 6, height_svg = 5, xml_reader_options = list(), xml_callback = NULL, ...) {
 
   stopifnot( is.numeric(width), width > 0, width <= 1 )
   canvas_id <- basename( tempfile(pattern = "svg_", fileext = format(Sys.time(), "%Y%m%d%H%M%S") ) )
@@ -115,6 +118,9 @@ girafe <- function(
   xml_remove(scr)
   xml_attr(data, "width") <- NULL
   xml_attr(data, "height") <- NULL
+  if (is.function(xml_callback)) {
+    xml_callback(data)
+  }
   unlink(path)
 
   tooltip_set <- opts_tooltip()
