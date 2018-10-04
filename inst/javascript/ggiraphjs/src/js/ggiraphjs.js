@@ -110,7 +110,7 @@ export default class ggiraphjs {
 
     }
 
-    adjustSize(width, height) {
+    adjustSize(width, height, shiny_sizing) {
         const containerid = this.containerid;
         const svgid = this.svgid;
 
@@ -121,9 +121,17 @@ export default class ggiraphjs {
 
 
         if (HTMLWidgets.shinyMode) {
+            const box = d3.select("#" + svgid).property("viewBox").baseVal;
+            let swidth = shiny_sizing.svg_auto_width ? "100%" : width;
+            let sheight = shiny_sizing.svg_auto_height ? "100%" : height;
+            let smaxwidth = shiny_sizing.svg_limit_width ? box.width + "px" : "unset";
+            let smaxheight = shiny_sizing.svg_limit_height ? box.height + "px" : "unset";
+
             d3.select("#" + svgid)
-                .style("width", "100%")
-                .style("height", height)
+                .style("width", swidth)
+                .style("height", sheight)
+                .style("max-width", smaxwidth)
+                .style("max-height", smaxheight)
                 .style("margin-left", "auto")
                 .style("margin-right", "auto");
         } else {
@@ -137,8 +145,15 @@ export default class ggiraphjs {
         const svgid = this.svgid;
 
         if (HTMLWidgets.shinyMode) {
-            d3.select("#" + svgid)
-                .style("height", height);
+            const el = d3.select("#" + svgid);
+            const cwidth = el.style("width");
+            const cheight = el.style("height");
+            if (cwidth !== "100%") {
+              el.style("width", width);
+            }
+            if(cheight !== "100%") {
+              el.style("height", height);
+            }
         }
     }
 
