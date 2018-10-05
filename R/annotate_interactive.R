@@ -1,11 +1,10 @@
 #' @title interactive annotations
 #'
 #' @description
-#' The geometry is based on \code{\link[ggplot2]{annotate}}.
-#' See the documentation for that functions for more details.
+#' Create interactive annotations, similar to ggplot2::annotate.
+#' See the documentation for that function for more details.
 #'
 #' @seealso \code{\link{ggiraph}}
-#' @inheritParams \code{\link[ggplot2]{annotate}}
 #' @export
 annotate_interactive <-
     function (geom,
