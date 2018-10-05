@@ -237,8 +237,8 @@ opts_toolbar <- function(position = "topright", saveaspng = TRUE){
 
 #' @title shiny sizing settings
 #' @description Allows customization of the svg style sizing in shiny
-#' @param svg_auto_width When TRUE (default), sets the css width property to 100%, otherwise it is set by the girafeOutput width parameter
-#' @param svg_auto_height When TRUE, sets the css height property to 100%, otherwise (default) it is set by the girafeOutput height parameter
+#' @param svg_auto_width When TRUE (default), sets the css width property to 100\%, otherwise it is set by the girafeOutput width parameter
+#' @param svg_auto_height When TRUE, sets the css height property to 100\%, otherwise (default) it is set by the girafeOutput height parameter
 #' @param svg_limit_width When TRUE, sets the css max-width property to the svg's width, otherwise (default) it is not set
 #' @param svg_limit_height When TRUE, sets the css max-width property to the svg's height, otherwise (default) it is not set
 #' @export
