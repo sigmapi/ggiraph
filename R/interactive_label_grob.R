@@ -28,7 +28,7 @@ interactive_label_grob <- function(label, x = unit(0.5, "npc"), y = unit(0.5, "n
 
 
 #' @export
-makeContent.labelgrob <- function(x) {
+makeContent.interactive_label_grob <- function(x) {
   hj <- resolveHJust(x$just, NULL)
   vj <- resolveVJust(x$just, NULL)
 
