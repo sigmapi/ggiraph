@@ -34,6 +34,15 @@ makeContent.interactive_label_grob <- function(x) {
   hj <- resolveHJust(x$just, NULL)
   vj <- resolveVJust(x$just, NULL)
 
+  t1 <- textGrob(
+      x$label,
+      x$x + 2 * (0.5 - hj) * x$padding,
+      x$y + 2 * (0.5 - vj) * x$padding,
+      just = c(hj, vj),
+      gp = x$text.gp,
+      name = "text"
+  )
+
   t <- grob(
        tooltip = x$tooltip,
        onclick = x$onclick,
@@ -46,17 +55,41 @@ makeContent.interactive_label_grob <- function(x) {
        gp = x$text.gp,
        cl="interactive_text_grob")
 
-  r <- roundrectGrob(
-      x$x,
-      x$y,
-      default.units = "native",
-      width = grobWidth(t) + 2 * x$padding,
-      height = grobHeight(t) + 2 * x$padding,
-      just = c(hj, vj),
-      r = x$r,
-      gp = x$rect.gp,
-      name = "box"
-  )
+   r <- grob(
+     tooltip = x$tooltip,
+     onclick = x$onclick,
+     data_id = x$data_id,
+     x=x$x,
+     y=x$y,
+     width=grobWidth(t1) + 2 * x$padding,
+     height=grobHeight(t1) + 2 * x$padding,
+     just = c(hj, vj),
+     r = x$r,
+     gp = x$rect.gp,
+     name = "box",
+     cl="interactive_roundrect_grob"
+   )
 
   setChildren(x, gList(r, t))
+}
+
+#' @export
+#' @title interactive_roundrect_grob drawing
+#' @description draw an interactive_roundrect_grob
+#' @inheritParams grid::drawDetails
+drawDetails.interactive_roundrect_grob <- function(x,recording) {
+  rvg_tracer_on()
+  argnames = setdiff( names(x), c("tooltip", "onclick", "data_id") )
+  do.call( grid.roundrect, x[argnames] )
+
+  ids = rvg_tracer_off()
+  if( length( ids ) > 0 ) {
+    if( !is.null( x$tooltip ))
+      set_attr( ids = as.integer( ids ), str = encode_cr(x$tooltip), attribute = "title" )
+    if( !is.null( x$onclick ))
+      set_attr( ids = as.integer( ids ), str = x$onclick, attribute = "onclick" )
+    if( !is.null( x$data_id ))
+      set_attr( ids = as.integer( ids ), str = x$data_id, attribute = "data-id" )
+  }
+  invisible()
 }
