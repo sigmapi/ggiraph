@@ -22,7 +22,9 @@ interactive_label_grob <- function(label, x = unit(0.5, "npc"), y = unit(0.5, "n
   if (!is.unit(y))
     y <- unit(y, default.units)
 
-  gTree(label = label, x = x, y = y, just = just, padding = padding, r = r,
+  gTree(label = label, x = x, y = y,
+        tooltip = tooltip, onclick = onclick, data_id = data_id,
+        just = just, padding = padding, r = r,
       name = name, text.gp = text.gp, rect.gp = rect.gp, vp = vp, cl = "interactive_label_grob")
 }
 
@@ -32,16 +34,23 @@ makeContent.interactive_label_grob <- function(x) {
   hj <- resolveHJust(x$just, NULL)
   vj <- resolveVJust(x$just, NULL)
 
-  t <- textGrob(
-      x$label,
-      x$x + 2 * (0.5 - hj) * x$padding,
-      x$y + 2 * (0.5 - vj) * x$padding,
-      just = c(hj, vj),
-      gp = x$text.gp,
-      name = "text"
-  )
+  t <- grob(
+       tooltip = x$tooltip,
+       onclick = x$onclick,
+       data_id = x$data_id,
+       label = x$label,
+       x = x$x + 2 * (0.5 - hj) * x$padding,
+       y = x$y + 2 * (0.5 - vj) * x$padding,
+       just = c(hj, vj),
+       name = "text",
+       gp = x$text.gp,
+       vp = x$vp,
+       cl="interactive_text_grob")
 
-  r <- roundrectGrob(x$x, x$y, default.units = "native",
+  r <- roundrectGrob(
+      x$x,
+      x$y,
+      default.units = "native",
       width = grobWidth(t) + 2 * x$padding,
       height = grobHeight(t) + 2 * x$padding,
       just = c(hj, vj),
@@ -51,25 +60,4 @@ makeContent.interactive_label_grob <- function(x) {
   )
 
   setChildren(x, gList(r, t))
-}
-
-#' @export
-#' @title interactive_label_grob drawing
-#' @description draw an interactive_label_grob
-#' @inheritParams grid::drawDetails
-drawDetails.interactive_label_grob <- function(x,recording) {
-  rvg_tracer_on()
-  argnames = setdiff( names(x), c("tooltip", "onclick", "data_id") )
-  do.call( grid.text, x[argnames] )
-
-  ids = rvg_tracer_off()
-  if( length( ids ) > 0 ) {
-    if( !is.null( x$tooltip ))
-      set_attr( ids = as.integer( ids ), str = encode_cr(x$tooltip), attribute = "title" )
-    if( !is.null( x$onclick ))
-      set_attr( ids = as.integer( ids ), str = x$onclick, attribute = "onclick" )
-    if( !is.null( x$data_id ))
-      set_attr( ids = as.integer( ids ), str = x$data_id, attribute = "data-id" )
-  }
-  invisible()
 }
