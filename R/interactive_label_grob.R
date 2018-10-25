@@ -44,7 +44,6 @@ makeContent.interactive_label_grob <- function(x) {
        just = c(hj, vj),
        name = "text",
        gp = x$text.gp,
-       vp = x$vp,
        cl="interactive_text_grob")
 
   r <- roundrectGrob(
