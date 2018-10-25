@@ -121,6 +121,10 @@ GeomInteractiveLabel <- ggproto(
   draw_key = draw_key_label
 )
 
+ggname <- function(prefix, grob) {
+  grob$name <- grobName(grob, prefix)
+  grob
+}
 
 compute_just <- function(just, x) {
   inward <- just == "inward"
