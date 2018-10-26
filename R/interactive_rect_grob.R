@@ -66,7 +66,7 @@ interactive_roundrect_grob <- function(x=unit(0.5, "npc"), y=unit(0.5, "npc"),
     tooltip = NULL,
     onclick = NULL,
     data_id = NULL,
-    just="centre", hjust=NULL, vjust=NULL,
+    just="centre",
     default.units="npc",
     name=NULL, gp=gpar(), vp=NULL) {
   if (!is.unit(x))
@@ -79,7 +79,7 @@ interactive_roundrect_grob <- function(x=unit(0.5, "npc"), y=unit(0.5, "npc"),
     height <- unit(height, default.units)
   grob(tooltip = tooltip, onclick = onclick, data_id = data_id,
       x=x, y=y, width=width, height=height, just=just,
-      hjust=hjust, vjust=vjust, r = r,
+      r = r,
       name=name, gp=gp, vp=vp, cl="interactive_roundrect_grob")
 }
 
