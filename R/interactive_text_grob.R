@@ -37,19 +37,29 @@ drawDetails.interactive_text_grob <- function(x,recording) {
 
   ids = rvg_tracer_off()
   if( length( ids ) > 0 ) {
+    pids = as.integer( ids )
+    newlines = str_count(x$label,"\n")
     if( !is.null( x$tooltip )) {
-      pids = as.integer( ids )
       pstr = encode_cr(x$tooltip)
-      newlines = str_count(x$label,"\n")
       if (newlines > 0) {
         pstr = rep(pstr, newlines+1)
       }
       set_attr( ids = pids, str = pstr, attribute = "title" )
     }
-    if( !is.null( x$onclick ))
-      set_attr( ids = as.integer( ids ), str = x$onclick, attribute = "onclick" )
-    if( !is.null( x$data_id ))
-      set_attr( ids = as.integer( ids ), str = x$data_id, attribute = "data-id" )
+    if( !is.null( x$onclick )) {
+      pstr = x$onclick
+      if (newlines > 0) {
+        pstr = rep(pstr, newlines+1)
+      }
+      set_attr( ids = pids, str = pstr, attribute = "onclick" )
+    }
+    if( !is.null( x$data_id )){
+      pstr = x$data_id
+      if (newlines > 0) {
+        pstr = rep(pstr, newlines+1)
+      }
+      set_attr( ids = pids, str = pstr, attribute = "data-id" )
+    }
   }
   invisible()
 }
