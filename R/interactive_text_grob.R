@@ -31,29 +31,18 @@ interactive_text_grob <- function(label, x=unit(0.5, "npc"), y=unit(0.5, "npc"),
 #' @description draw an interactive_text_grob
 #' @inheritParams grid::drawDetails
 drawDetails.interactive_text_grob <- function(x,recording) {
-  rvg_tracer_on()
-  argnames = setdiff( names(x), c("tooltip", "onclick", "data_id") )
-  do.call( grid.text, x[argnames] )
+	rvg_tracer_on()
+	argnames = setdiff( names(x), c("tooltip", "onclick", "data_id") )
+	do.call( grid.text, x[argnames] )
 
-  ids = rvg_tracer_off()
-  if( length( ids ) > 0 ) {
-    pids = as.integer( ids )
-    newlines = str_count(x$label,"\n")
-    if( !is.null( x$tooltip )) {
-      pstr = encode_cr(x$tooltip)
-      pstr = ifelse(newlines > 0, rep(pstr, newlines+1), pstr)
-      set_attr( ids = pids, str = pstr, attribute = "title" )
-    }
-    if( !is.null( x$onclick )) {
-      pstr = x$onclick
-      pstr = ifelse(newlines > 0, rep(pstr, newlines+1), pstr)
-      set_attr( ids = pids, str = pstr, attribute = "onclick" )
-    }
-    if( !is.null( x$data_id )){
-      pstr = x$data_id
-      pstr = ifelse(newlines > 0, rep(pstr, newlines+1), pstr)
-      set_attr( ids = pids, str = pstr, attribute = "data-id" )
-    }
-  }
-  invisible()
+	ids = rvg_tracer_off()
+	if( length( ids ) > 0 ) {
+	  if( !is.null( x$tooltip ))
+	    set_attr( ids = as.integer( ids ), str = encode_cr(x$tooltip), attribute = "title" )
+	  if( !is.null( x$onclick ))
+	    set_attr( ids = as.integer( ids ), str = x$onclick, attribute = "onclick" )
+	  if( !is.null( x$data_id ))
+	    set_attr( ids = as.integer( ids ), str = x$data_id, attribute = "data-id" )
+	}
+	invisible()
 }
