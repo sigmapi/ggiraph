@@ -53,6 +53,7 @@ set_attr = function( ids, attribute, str ){
   stopifnot( is.character(str) )
   stopifnot( is.numeric(ids) )
   if( length(ids) != length(str) ){
+    browser()
     if (length(str)==1) {
       str = rep(str, length(ids))
     }
