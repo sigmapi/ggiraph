@@ -18,21 +18,21 @@
 #' @example examples/geom_rect_interactive.R
 #' @export
 geom_rect_interactive <- function(mapping = NULL, data = NULL, stat = "identity",
-		position = "identity", na.rm = FALSE, show.legend = NA,
-		inherit.aes = TRUE, ...) {
-	layer(
-			data = data,
-			mapping = mapping,
-			stat = stat,
-			geom = GeomInteractiveRect,
-			position = position,
-			show.legend = show.legend,
-			inherit.aes = inherit.aes,
-			params = list(
-			  na.rm = na.rm,
-			  ...
-			)
-	)
+    position = "identity", na.rm = FALSE, show.legend = NA,
+    inherit.aes = TRUE, ...) {
+  layer(
+      data = data,
+      mapping = mapping,
+      stat = stat,
+      geom = GeomInteractiveRect,
+      position = position,
+      show.legend = show.legend,
+      inherit.aes = inherit.aes,
+      params = list(
+        na.rm = na.rm,
+        ...
+      )
+  )
 }
 
 #' @rdname ggiraph-ggproto
@@ -40,17 +40,17 @@ geom_rect_interactive <- function(mapping = NULL, data = NULL, stat = "identity"
 #' @usage NULL
 #' @export
 GeomInteractiveRect <- ggproto("GeomInteractiveRect", Geom,
-		default_aes = aes(colour = NA, fill = "grey20",
-		                  size = 0.5, linetype = 1, alpha = NA,
-		                  tooltip = NULL, onclick = NULL, data_id = NULL),
+    default_aes = aes(colour = NA, fill = "grey20",
+                      size = 0.5, linetype = 1, alpha = NA,
+                      tooltip = NULL, onclick = NULL, data_id = NULL),
 
-		required_aes = c("xmin", "xmax", "ymin", "ymax"),
+    required_aes = c("xmin", "xmax", "ymin", "ymax"),
 
-		draw_panel = function(self, data, panel_scales, coord) {
-			if (!coord$is_linear()) {
-				aesthetics <- setdiff(
-						names(data), c("x", "y", "xmin", "xmax", "ymin", "ymax")
-				)
+    draw_panel = function(self, data, panel_scales, coord) {
+      if (!coord$is_linear()) {
+        aesthetics <- setdiff(
+            names(data), c("x", "y", "xmin", "xmax", "ymin", "ymax")
+        )
 
         polys <- lapply(split(data, seq_len(nrow(data)) ), function(row) {
           poly <- rect_to_poly(row$xmin, row$xmax, row$ymin, row$ymax)
@@ -60,51 +60,137 @@ GeomInteractiveRect <- ggproto("GeomInteractiveRect", Geom,
           GeomInteractivePolygon$draw_panel(cbind(poly, aes), panel_scales, coord)
         } )
 
-				setGrobName("bar", do.call("grobTree", polys))
-			} else {
-				coords <- coord$transform(data, panel_scales)
+        setGrobName("bar", do.call("grobTree", polys))
+      } else {
+        coords <- coord$transform(data, panel_scales)
 
-				if( !is.null(coord$tooltip) && !is.character(coord$tooltip) )
-				  coord$tooltip <- as.character(coord$tooltip)
-				if( !is.null(coord$onclick) && !is.character(coord$onclick) )
-				  coord$onclick <- as.character(coord$onclick)
-				if( !is.null(coord$data_id) && !is.character(coord$data_id) )
-				  coord$data_id <- as.character(coord$data_id)
+        if( !is.null(coord$tooltip) && !is.character(coord$tooltip) )
+          coord$tooltip <- as.character(coord$tooltip)
+        if( !is.null(coord$onclick) && !is.character(coord$onclick) )
+          coord$onclick <- as.character(coord$onclick)
+        if( !is.null(coord$data_id) && !is.character(coord$data_id) )
+          coord$data_id <- as.character(coord$data_id)
 
 
-				setGrobName("geom_rect_interactive", interactive_rect_grob(
-								coords$xmin, coords$ymax,
-								tooltip = coords$tooltip,
-								onclick = coords$onclick,
-								data_id = coords$data_id,
-								width = coords$xmax - coords$xmin,
-								height = coords$ymax - coords$ymin,
-								default.units = "native",
-								just = c("left", "top"),
-								gp = gpar(
-										col = coords$colour,
-										fill = alpha(coords$fill, coords$alpha),
-										lwd = coords$size * .pt,
-										lty = coords$linetype,
-										lineend = "butt"
-								)
-						))
-			}
-		},
+        setGrobName("geom_rect_interactive", interactive_rect_grob(
+                coords$xmin, coords$ymax,
+                tooltip = coords$tooltip,
+                onclick = coords$onclick,
+                data_id = coords$data_id,
+                width = coords$xmax - coords$xmin,
+                height = coords$ymax - coords$ymin,
+                default.units = "native",
+                just = c("left", "top"),
+                gp = gpar(
+                    col = coords$colour,
+                    fill = alpha(coords$fill, coords$alpha),
+                    lwd = coords$size * .pt,
+                    lty = coords$linetype,
+                    lineend = "butt"
+                )
+            ))
+      }
+    },
 
-		draw_key = draw_key_polygon
+    draw_key = draw_key_polygon
 )
 
 
 rect_to_poly <- function(xmin, xmax, ymin, ymax) {
-	data.frame(
-			y = c(ymax, ymax, ymin, ymin, ymax),
-			x = c(xmin, xmax, xmax, xmin, xmin)
-	)
+  data.frame(
+      y = c(ymax, ymax, ymin, ymin, ymax),
+      x = c(xmin, xmax, xmax, xmin, xmin)
+  )
 }
 
 
+#' @title interactive round rectangles
+#'
+#' @description
+#' These geometries are based on \code{\link[ggplot2]{geom_rect}} and
+#' \code{\link[ggplot2]{geom_tile}}.
+#' See the documentation for those functions for more details.
+#'
+#' @note
+#' Converting a raster to svg elements could inflate dramatically the size of the
+#' svg and make it unreadable in a browser.
+#' Function \code{geom_tile_interactive} should be used with caution, total number of
+#' rectangles should be small.
+#'
+#' @seealso \code{\link{ggiraph}}
+#' @inheritParams geom_point_interactive
+#' @examples
+#' # add interactive polygons to a ggplot -------
+#' @example examples/geom_rect_interactive.R
+#' @export
+geom_roundrect_interactive <- function(mapping = NULL, data = NULL, stat = "identity",
+    position = "identity", radius = unit(0.15, "lines"), na.rm = FALSE, show.legend = NA,
+    inherit.aes = TRUE, ...) {
+  layer(
+      data = data,
+      mapping = mapping,
+      stat = stat,
+      geom = GeomInteractiveRoundRect,
+      position = position,
+      show.legend = show.legend,
+      inherit.aes = inherit.aes,
+      params = list(
+          radius = radius,
+          na.rm = na.rm,
+          ...
+      )
+  )
+}
 
+
+#' @rdname ggiraph-ggproto
+#' @format NULL
+#' @usage NULL
+#' @export
+GeomInteractiveRoundRect <- ggproto("GeomInteractiveRoundRect", Geom,
+    default_aes = aes(colour = NA, fill = "grey20",
+        size = 0.5, linetype = 1, alpha = NA,
+        tooltip = NULL, onclick = NULL, data_id = NULL),
+
+    required_aes = c("xmin", "xmax", "ymin", "ymax"),
+
+    draw_panel = function(self, data, panel_params, coord,
+        radius = unit(0.15, "lines")) {
+
+      coords <- coord$transform(data, panel_params)
+
+      lapply(1:length(coords$xmin), function(i) {
+
+            interactive_roundrect_grob(
+                x = coords$xmin[i],
+                y = coords$ymax[i],
+                width = (coords$xmax[i] - coords$xmin[i]),
+                height = (coords$ymax[i] - coords$ymin)[i],
+                tooltip = coords$tooltip[i],
+                onclick = coords$onclick[i],
+                data_id = coords$data_id[i],
+                r = radius,
+                default.units = "native",
+                just = c("left", "top"),
+                gp = grid::gpar(
+                    col = coords$colour[i],
+                    fill = alpha(coords$fill[i], coords$alpha[i]),
+                    lwd = coords$size[i] * .pt,
+                    lty = coords$linetype[i],
+                    lineend = "butt"
+                )
+            )
+
+          }) -> gl
+
+      grobs <- do.call(grid::gList, gl)
+
+      ggname("geom_roundrect_interactive", grid::grobTree(children = grobs))
+
+    },
+
+    draw_key = draw_key_polygon
+)
 
 
 #' @rdname geom_rect_interactive

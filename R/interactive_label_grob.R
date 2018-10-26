@@ -72,24 +72,3 @@ makeContent.interactive_label_grob <- function(x) {
 
   setChildren(x, gList(r, t))
 }
-
-#' @export
-#' @title interactive_roundrect_grob drawing
-#' @description draw an interactive_roundrect_grob
-#' @inheritParams grid::drawDetails
-drawDetails.interactive_roundrect_grob <- function(x,recording) {
-  rvg_tracer_on()
-  argnames = setdiff( names(x), c("tooltip", "onclick", "data_id") )
-  do.call( grid.roundrect, x[argnames] )
-
-  ids = rvg_tracer_off()
-  if( length( ids ) > 0 ) {
-    if( !is.null( x$tooltip ))
-      set_attr( ids = as.integer( ids ), str = encode_cr(x$tooltip), attribute = "title" )
-    if( !is.null( x$onclick ))
-      set_attr( ids = as.integer( ids ), str = x$onclick, attribute = "onclick" )
-    if( !is.null( x$data_id ))
-      set_attr( ids = as.integer( ids ), str = x$data_id, attribute = "data-id" )
-  }
-  invisible()
-}
