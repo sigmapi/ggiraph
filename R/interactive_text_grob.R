@@ -42,7 +42,7 @@ drawDetails.interactive_text_grob <- function(x,recording) {
       pstr = encode_cr(x$tooltip)
       newlines = str_count(x$label,"\n")
       if (newlines > 0) {
-        pstr = strrep(pstr, newlines+1)
+        pstr = rep(pstr, newlines+1)
       }
       set_attr( ids = pids, str = pstr, attribute = "title" )
     }
