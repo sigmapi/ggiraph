@@ -4,7 +4,7 @@
 #' @title trace on id colection
 #'
 #' @description Start collecting id of an dsvg device.
-#' @noRd
+#' @export
 dsvg_tracer_on <- function(){
 
   dl <- dev.list()
@@ -20,7 +20,7 @@ dsvg_tracer_on <- function(){
 #' @description get collected id of an dsvg device and
 #' stop collecting.
 #' @return graphical elements id as integer values.
-#' @noRd
+#' @export
 dsvg_tracer_off <- function(){
 
   dl <- dev.list()
@@ -45,7 +45,7 @@ dsvg_tracer_off <- function(){
 #' \code{\link{dsvg_tracer_off}}).
 #' @param attribute name of the attribute to set.
 #' @param str values to set for the attribute.
-#' @noRd
+#' @export
 set_attr = function( ids, attribute, str ){
   stopifnot( .Device == "dsvg_device" )
   if( is.factor(str) )
@@ -57,6 +57,11 @@ set_attr = function( ids, attribute, str ){
   stopifnot( is.character(str) )
   stopifnot( is.numeric(ids) )
 
+  if( length(ids) != length(str) ){
+    if (length(str)==1) {
+      str <- rep(str, length(ids))
+    }
+  }
   if( length(ids) != length(str) ){
     stop("ids don't have the same length than str (most often, it occurs because of clipping)")
   }
