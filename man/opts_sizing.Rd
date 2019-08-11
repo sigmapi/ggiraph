@@ -4,13 +4,22 @@
 \alias{opts_sizing}
 \title{girafe sizing settings}
 \usage{
-opts_sizing(rescale = TRUE, width = 1)
+opts_sizing(rescale = TRUE, width = 1, maxWidth = NULL,
+  minWidth = NULL, maxHeight = NULL, minHeight = NULL)
 }
 \arguments{
 \item{rescale}{if FALSE, graphic will not be resized
 and the dimensions are exactly those of the container.}
 
 \item{width}{widget width ratio (0 < width <= 1).}
+
+\item{maxWidth}{max widget width}
+
+\item{minWidth}{min widget width}
+
+\item{maxHeight}{max widget height}
+
+\item{minHeight}{min widget height}
 }
 \description{
 Allows customization of the svg style sizing

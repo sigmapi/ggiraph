@@ -42,15 +42,25 @@ HTMLWidgets.widget({
           var width_ = d3.select(el).style("width");
           var height_ = d3.select(el).style("height");
           ggobj.fixSize(width_, height_);
-        } else if( HTMLWidgets.shinyMode ){
-          ggobj.autoScale("100%");
-          ggobj.IEFixResize(1, 1/x.ratio);
-          ggobj.setSizeLimits(width+'px', 0, height+'px', 0);
-          ggobj.removeContainerLimits();
         } else {
-          ggobj.autoScale(Math.round(x.settings.sizing.width * 100) + "%");
-          ggobj.IEFixResize(x.settings.sizing.width, 1/x.ratio);
-          ggobj.setSizeLimits("unset", "unset", "unset", "unset");
+          if( HTMLWidgets.shinyMode ){
+            ggobj.autoScale("100%");
+            ggobj.IEFixResize(1, 1/x.ratio);
+          } else {
+            ggobj.autoScale(Math.round(x.settings.sizing.width * 100) + "%");
+            ggobj.IEFixResize(x.settings.sizing.width, 1/x.ratio);
+          }
+          var width_max, width_min, height_max, height_min;
+          width_max = width_min = height_max = height_min = "unset";
+          if( x.settings.sizing.maxWidth)
+            width_max = x.settings.sizing.maxWidth + "px";
+          if( x.settings.sizing.minWidth)
+            width_min = x.settings.sizing.minWidth + "px";
+          if( x.settings.sizing.maxHeight)
+            height_max = x.settings.sizing.maxHeight + "px";
+          if( x.settings.sizing.minHeight)
+            height_min = x.settings.sizing.minHeight + "px";
+          ggobj.setSizeLimits(width_max, width_min, height_max, height_min);
           ggobj.removeContainerLimits();
         }
 

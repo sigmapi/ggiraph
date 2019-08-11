@@ -246,6 +246,10 @@ opts_toolbar <- function(position = "topright", saveaspng = TRUE){
 #' @param rescale if FALSE, graphic will not be resized
 #' and the dimensions are exactly those of the container.
 #' @param width widget width ratio (0 < width <= 1).
+#' @param maxWidth max widget width
+#' @param minWidth min widget width
+#' @param maxHeight max widget height
+#' @param minHeight min widget height
 #' @family girafe sizing options
 #' @seealso set options with \code{\link{girafe_options}}
 #' @examples
@@ -265,20 +269,61 @@ opts_toolbar <- function(position = "topright", saveaspng = TRUE){
 #'   opts_sizing(rescale = FALSE) )
 #' if( interactive() ) print(x)
 #' @export
-opts_sizing <- function(rescale = TRUE, width = 1){
-  if( !is.logical(rescale) || length(rescale) != 1L ){
-    stop("parameter rescale should be a scalar logical")
-  } else rescale <- as.logical(rescale)
-  if( !is.numeric(width) || length(width) != 1L ){
-    stop("parameter width should be a scalar double")
-  } else width <- as.double(width)
+opts_sizing <-
+  function(rescale = TRUE,
+           width = 1,
+           maxWidth = NULL,
+           minWidth = NULL,
+           maxHeight = NULL,
+           minHeight = NULL) {
+    if (!is.logical(rescale) || length(rescale) != 1L) {
+      stop("parameter rescale should be a scalar logical")
+    } else
+      rescale <- as.logical(rescale)
+    if (!is.numeric(width) || length(width) != 1L) {
+      stop("parameter width should be a scalar double")
+    } else
+      width <- as.double(width)
+    if (!is.null(maxWidth)) {
+      if (!is.numeric(maxWidth) || length(maxWidth) != 1L) {
+        stop("parameter maxWidth should be a scalar integer")
+      } else
+        maxWidth <- as.integer(maxWidth)
+    }
+    if (!is.null(minWidth)) {
+      if (!is.numeric(minWidth) || length(minWidth) != 1L) {
+        stop("parameter minWidth should be a scalar integer")
+      } else
+        minWidth <- as.integer(minWidth)
+    }
+    if (!is.null(maxHeight)) {
+      if (!is.numeric(maxHeight) || length(maxHeight) != 1L) {
+        stop("parameter maxHeight should be a scalar integer")
+      } else
+        maxHeight <- as.integer(maxHeight)
+    }
+    if (!is.null(minHeight)) {
+      if (!is.numeric(minHeight) ||
+          length(minHeight) != 1L) {
+        stop("parameter minHeight should be a scalar integer")
+      } else
+        minHeight <- as.integer(minHeight)
+    }
 
-  stopifnot(width > 0, width <= 1 )
+    stopifnot(width > 0, width <= 1)
 
-  x <- list(rescale = rescale, width = width)
-  class(x) <- "opts_sizing"
-  x
-}
+    x <-
+      list(
+        rescale = rescale,
+        width = width,
+        maxWidth = maxWidth,
+        minWidth = minWidth,
+        maxHeight = maxHeight,
+        minHeight = minHeight
+      )
+    class(x) <- "opts_sizing"
+    x
+  }
 
 #' @title set girafe options
 #' @description Defines the animation options related to
