@@ -5,7 +5,8 @@
 \title{create a girafe object}
 \usage{
 girafe(code, ggobj = NULL, pointsize = 12, width_svg = 6,
-  height_svg = 5, xml_reader_options = list(), ...)
+  height_svg = 5, xml_reader_options = list(), xml_callback = NULL,
+  ...)
 }
 \arguments{
 \item{code}{Plotting code to execute}
@@ -23,6 +24,10 @@ graphic as it will be used to define viewbox attribute of the SVG result.}
 when parsing the svg result. This feature can be used to parse
 huge svg files by using \code{list(options = "HUGE")} but this
 is not recommanded.}
+
+\item{xml_callback}{A user defined function to be called after the xml for the svg is ready.
+It will be passed the xml data as an argument and its return value is not used.
+This can be used to manipulate the svg by inserting custom elements, like a background image.}
 
 \item{...}{arguments passed on to \code{\link{dsvg}}}
 }
