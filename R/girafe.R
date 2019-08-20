@@ -87,6 +87,7 @@
 #' package widgetframe that wraps htmlwidgets inside a responsive iframe.
 #' @seealso \code{\link{girafe_options}}
 #' @export
+#' @importFrom purrr walk
 girafe <- function(
   code, ggobj = NULL,  pointsize = 12,
   width_svg = 6, height_svg = 5, xml_reader_options = list(), ...) {
@@ -107,10 +108,23 @@ girafe <- function(
 
   xml_reader_options$x <- path
   data <- do.call(read_xml, xml_reader_options )
-  scr <- xml_find_all(data, "//*[@type='text/javascript']", ns = xml_ns(data) )
-  js <- paste( sapply( scr, xml_text ), collapse = ";")
-  js <- paste0("function zzz(){", js, "};")
-  xml_remove(scr)
+  comments <- xml_find_all(data, "//*[local-name() = 'comment']")
+  errored <- 0
+  walk(comments, function(c) {
+    targetId <- xml_attr(c, "target")
+    attrName <- xml_attr(c, "attr")
+    attrValue <- xml_text(c)
+    target <- xml_find_first(data, paste0("//*[@id='", targetId, "']"))
+    if (!inherits(target, "xml_missing")) {
+      xml_attr(target, attrName) <- attrValue
+    } else {
+      errored <<- errored + 1
+    }
+  })
+  if (errored > 0) {
+    warning("Could not set svg attributes for some elements (", errored, ")")
+  }
+  xml_remove(comments)
   xml_attr(data, "width") <- NULL
   xml_attr(data, "height") <- NULL
   unlink(path)
@@ -124,7 +138,7 @@ girafe <- function(
   toolbar_set <- opts_toolbar()
   sizing_set <- opts_sizing()
 
-  x = list( html = as.character(data), js = js,
+  x = list( html = as.character(data), js = NULL,
             uid = canvas_id,
             ratio = width_svg / height_svg,
             settings = list(

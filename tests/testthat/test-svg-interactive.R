@@ -31,12 +31,16 @@ test_that("attributes are written", {
   dev.off()
 
   doc <- read_xml(file)
-  script_node <- xml_find_first(doc, ".//script")
-  script_txt <-  xml_text(script_node)
-  tip1 = "document\\.querySelectorAll\\('#svgid'\\)\\[0\\]\\.getElementById\\('[0-9]+'\\)\\.setAttribute\\('onclick','alert\\(1\\)'\\)"
-  tip2 = "document\\.querySelectorAll\\('#svgid'\\)\\[0\\]\\.getElementById\\('[0-9]+'\\)\\.setAttribute\\('onclick','alert\\(2\\)'\\)"
-  expect_true( grepl( tip1, script_txt ) )
-  expect_true( grepl( tip2, script_txt ) )
+  comment_nodes <- xml_find_all(doc, "//*[local-name() = 'comment']")
+  expect_equal(length(comment_nodes), 2)
+  comment <- comment_nodes[[1]]
+  expect_match(xml_attr(comment, "target"), "[0-9]+")
+  expect_equal(xml_attr(comment, "attr"), "onclick")
+  expect_equal(xml_text(comment), "alert(1)")
+  comment <- comment_nodes[[2]]
+  expect_match(xml_attr(comment, "target"), "[0-9]+")
+  expect_equal(xml_attr(comment, "attr"), "onclick")
+  expect_equal(xml_text(comment), "alert(2)")
 })
 
 test_that("attributes cannot contain single quotes", {
