@@ -88,11 +88,12 @@
 #' @seealso \code{\link{girafe_options}}
 #' @export
 #' @importFrom purrr walk
+#' @importFrom uuid UUIDgenerate
 girafe <- function(
   code, ggobj = NULL,  pointsize = 12,
   width_svg = 6, height_svg = 5, xml_reader_options = list(), ...) {
 
-  canvas_id <- basename( tempfile(pattern = "svg_", fileext = format(Sys.time(), "%Y%m%d%H%M%S") ) )
+  canvas_id <- paste("svg", UUIDgenerate(), sep = "_")
   path = tempfile()
   dsvg(file = path, pointsize = pointsize, standalone = TRUE,
        width = width_svg, height = height_svg,
@@ -109,12 +110,13 @@ girafe <- function(
   xml_reader_options$x <- path
   data <- do.call(read_xml, xml_reader_options )
   comments <- xml_find_all(data, "//*[local-name() = 'comment']")
+  idprefix <- paste0(canvas_id, "_el_")
   errored <- 0
   walk(comments, function(c) {
     targetId <- xml_attr(c, "target")
     attrName <- xml_attr(c, "attr")
     attrValue <- xml_text(c)
-    target <- xml_find_first(data, paste0("//*[@id='", targetId, "']"))
+    target <- xml_find_first(data, paste0("//*[@id='", idprefix, targetId, "']"))
     if (!inherits(target, "xml_missing")) {
       xml_attr(target, attrName) <- attrValue
     } else {
