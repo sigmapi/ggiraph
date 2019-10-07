@@ -5,8 +5,8 @@
 \title{SVG Graphics Driver}
 \usage{
 dsvg(file = "Rplots.svg", width = 6, height = 6, bg = "white",
-  pointsize = 12, standalone = TRUE, canvas_id = "svg_1",
-  fonts = list())
+  pointsize = 12, standalone = TRUE, setdims = TRUE,
+  canvas_id = "svg_1", fonts = list())
 }
 \arguments{
 \item{file}{the file where output will appear.}
@@ -19,6 +19,8 @@ dsvg(file = "Rplots.svg", width = 6, height = 6, bg = "white",
 
 \item{standalone}{Produce a stand alone svg file? If \code{FALSE}, omits
 xml header and default namespace.}
+
+\item{setdims}{If TRUE (the default), the svg node will have attributes width & height set}
 
 \item{canvas_id}{svg id within HTML page.}
 

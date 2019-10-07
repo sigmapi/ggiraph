@@ -9,7 +9,7 @@ ggiraph(code, ggobj = NULL, pointsize = 12, width = 0.75,
   hover_css = NULL, tooltip_opacity = 0.9, tooltip_offx = 10,
   tooltip_offy = 0, tooltip_zindex = 999, zoom_max = 1,
   selection_type = "multiple", selected_css = NULL, dep_dir = NULL,
-  xml_reader_options = list(), ...)
+  ...)
 }
 \arguments{
 \item{code}{Plotting code to execute}
@@ -51,11 +51,6 @@ when widget is in a Shiny application.}
 
 \item{dep_dir}{Deprecated; the path where the output files are stored. If \code{NULL},
 the current path for temporary files is used.}
-
-\item{xml_reader_options}{read_xml additional arguments to be used
-when parsing the svg result. This feature can be used to parse
-huge svg files by using \code{list(options = "HUGE")} but this
-is not recommanded.}
 
 \item{...}{arguments passed on to \code{\link{dsvg}}}
 }

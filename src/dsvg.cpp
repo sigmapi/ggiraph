@@ -102,6 +102,7 @@ public:
   std::string clip_id;
   double clipleft, clipright, cliptop, clipbottom;
   bool standalone;
+  bool setdims;
   /*   */
   int tracer_first_elt;
   int tracer_last_elt;
@@ -113,7 +114,7 @@ public:
 
   XPtrCairoContext cc;
 
-  DSVG_dev(std::string filename_, bool standalone_,
+  DSVG_dev(std::string filename_, bool standalone_, bool setdims_,
            std::string canvas_id_,
            int bg_,
            Rcpp::List& aliases_,
@@ -126,6 +127,7 @@ public:
       clip_index(0),
       clip_id(canvas_id_ + "_cl_0"),
       standalone(standalone_),
+      setdims(setdims_),
       tracer_on(0),
       tracer_is_init(0),
       system_aliases(Rcpp::wrap(aliases_["system"])),
@@ -547,8 +549,10 @@ static void dsvg_new_page(const pGEcontext gc, pDevDesc dd) {
   SVGElement* root = svgd->svg_root();
   set_attr(root, "id", svgd->canvas_id.c_str());
   set_attr(root, "viewBox", format("0 0 %.2f %.2f", dd->right, dd->bottom));
-  set_attr(root, "width", format(dd->right));
-  set_attr(root, "height", format(dd->bottom));
+  if (svgd->setdims) {
+    set_attr(root, "width", format(dd->right));
+    set_attr(root, "height", format(dd->bottom));
+  }
 
   int bg_fill, fill, col;
   a_color bg_temp(gc->fill);
@@ -573,7 +577,7 @@ static void dsvg_new_page(const pGEcontext gc, pDevDesc dd) {
 
 
 pDevDesc dsvg_driver_new(std::string filename, int bg, double width,
-                        double height, int pointsize, bool standalone,
+                        double height, int pointsize, bool standalone, bool setdims,
                         std::string canvas_id, Rcpp::List aliases) {
 
   pDevDesc dd = (DevDesc*) calloc(1, sizeof(DevDesc));
@@ -639,7 +643,7 @@ pDevDesc dsvg_driver_new(std::string filename, int bg, double width,
   dd->haveTransparency = 2;
   dd->haveTransparentBg = 2;
 
-  dd->deviceSpecific = new DSVG_dev(filename, standalone,
+  dd->deviceSpecific = new DSVG_dev(filename, standalone, setdims,
                                     canvas_id,
                                     bg, aliases,
                                     width * 72, height * 72);
@@ -648,7 +652,7 @@ pDevDesc dsvg_driver_new(std::string filename, int bg, double width,
 
 // [[Rcpp::export]]
 bool DSVG_(std::string file, double width, double height, std::string bg,
-             int pointsize, bool standalone, std::string canvas_id, Rcpp::List aliases) {
+             int pointsize, bool standalone, bool setdims, std::string canvas_id, Rcpp::List aliases) {
 
   int bg_ = R_GE_str2col(bg.c_str());
 
@@ -657,7 +661,7 @@ bool DSVG_(std::string file, double width, double height, std::string bg,
   BEGIN_SUSPEND_INTERRUPTS {
     setlocale(LC_NUMERIC, "C");
 
-    pDevDesc dev = dsvg_driver_new(file, bg_, width, height, pointsize, standalone, canvas_id,
+    pDevDesc dev = dsvg_driver_new(file, bg_, width, height, pointsize, standalone, setdims, canvas_id,
                                    aliases);
     if (dev == NULL)
       Rcpp::stop("Failed to start SVG2 device");
