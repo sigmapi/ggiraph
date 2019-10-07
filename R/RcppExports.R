@@ -21,3 +21,7 @@ add_attribute <- function(dn, id, str, name) {
     .Call(`_ggiraph_add_attribute`, dn, id, str, name)
 }
 
+add_node <- function(dn, xml) {
+    .Call(`_ggiraph_add_node`, dn, xml)
+}
+

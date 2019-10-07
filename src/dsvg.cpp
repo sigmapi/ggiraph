@@ -234,6 +234,18 @@ public:
     css_map_->insert(std::pair<std::string, std::string>(key, value));
   }
 
+  bool add_node(const char* xml) {
+    tinyxml2::XMLDocument* doc_new = new tinyxml2::XMLDocument();
+    tinyxml2::XMLError error = doc_new->Parse(xml);
+    if (error) {
+      Rcout << doc_new->ErrorStr();
+      return false;
+    }
+    SVGElement * new_child = (SVGElement *)doc_new->RootElement()->DeepClone(doc_);
+    prepend_element(new_child, root_);
+    return true;
+  }
+
   ~DSVG_dev() {
     if (ok()) {
       if (doc_) {
@@ -836,4 +848,15 @@ bool add_attribute(int dn, Rcpp::IntegerVector id,
     }
   }
   return true;
+}
+
+
+// [[Rcpp::export]]
+bool add_node(int dn, std::string xml){
+  pGEDevDesc dev= GEgetDevice(dn);
+
+  if (!dev) return false;
+
+  DSVG_dev *svgd = (DSVG_dev *) dev->dev->deviceSpecific;
+  return svgd->add_node(xml.c_str());
 }

@@ -71,6 +71,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// add_node
+bool add_node(int dn, std::string xml);
+RcppExport SEXP _ggiraph_add_node(SEXP dnSEXP, SEXP xmlSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type dn(dnSEXP);
+    Rcpp::traits::input_parameter< std::string >::type xml(xmlSEXP);
+    rcpp_result_gen = Rcpp::wrap(add_node(dn, xml));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_ggiraph_DSVG_", (DL_FUNC) &_ggiraph_DSVG_, 9},
@@ -78,6 +90,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_ggiraph_set_tracer_off", (DL_FUNC) &_ggiraph_set_tracer_off, 1},
     {"_ggiraph_collect_id", (DL_FUNC) &_ggiraph_collect_id, 1},
     {"_ggiraph_add_attribute", (DL_FUNC) &_ggiraph_add_attribute, 4},
+    {"_ggiraph_add_node", (DL_FUNC) &_ggiraph_add_node, 2},
     {NULL, NULL, 0}
 };
 

@@ -90,3 +90,10 @@ check_css_attr <- function(css) {
     gsub(pattern, "", x)
   }))
 }
+
+add_xml_node <- function(xml) {
+  stopifnot(is.character(xml) && length(xml)==1)
+  dev_num <- as.integer(dev.cur()-1L)
+  add_node(dn = dev_num, xml)
+}
+
