@@ -5,6 +5,21 @@
 using namespace Rcpp;
 
 
+std::string a_color::color()
+{
+  char buf[ 100 ];
+  sprintf( buf, "#%02X%02X%02X", R_RED(this->col), R_GREEN(this->col), R_BLUE(this->col));
+  std::string str = buf;
+  return str;
+}
+
+std::string a_color::opacity() {
+  std::stringstream os;
+  os.precision(2);
+  os << this->alpha / 255.0 ;
+  return os.str();
+}
+
 std::string a_color::svg_fill_attr()
 {
 

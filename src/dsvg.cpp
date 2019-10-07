@@ -12,6 +12,7 @@
 #include "a_color.h"
 #include <locale>
 #include <sstream>
+#include "utils.h"
 
 std::string to_string( const int& n )
 {
@@ -135,6 +136,11 @@ public:
     clipright = width_;
     cliptop = 0.0;
     clipbottom = height_;
+    doc_ = 0;
+    root_ = 0;
+    root_g_ = 0;
+    element_map_ = 0;
+    css_map_ = 0;
   }
 
   bool ok() const {
@@ -176,9 +182,86 @@ public:
     }
   }
 
+  SVGElement* svg_root() {
+    if (doc_)
+      return root_;
+    this->doc_ = new_svg_doc(standalone, false);
+    this->root_ = svg_element("svg", false, (SVGElement*)doc_);
+    if (standalone){
+      set_attr(root_, "xmlns", "http://www.w3.org/2000/svg");
+      set_attr(root_, "xmlns:xlink", "http://www.w3.org/1999/xlink");
+    }
+    this->root_g_ = svg_element("g", false, root_);
+    this->element_map_ = new std::unordered_map<int, SVGElement*>();
+    this->css_map_ = new std::unordered_map<std::string, std::string>();
+    return root_;
+  }
+
+  SVGElement* svg_element(const char* name, const bool track, SVGElement* parent = NULL) {
+    SVGElement* el = new_svg_element(name, doc_);
+    if (parent) {
+      append_element(el, parent);
+    } else {
+      append_element(el, root_g_);
+    }
+    if (track) {
+      element_map_->insert(std::pair<int, SVGElement*>(element_index, el));
+    }
+    return el;
+  }
+
+  SVGText* svg_text(const char* str, SVGElement* parent = NULL, const bool cdata = true) {
+    SVGText* el = new_svg_text(str, doc_, cdata);
+    if (parent) {
+      append_element((SVGElement*)el, parent);
+    } else {
+      append_element((SVGElement*)el, root_g_);
+    }
+    return el;
+  }
+
+  SVGElement* get_svg_element(const int id) {
+    std::unordered_map<int, SVGElement*>::const_iterator got = element_map_->find(id);
+    if ( got == element_map_->end() )
+      return NULL;
+    else
+      return got->second;
+  }
+
+  void add_css(const std::string key, const std::string value) {
+    css_map_->insert(std::pair<std::string, std::string>(key, value));
+  }
+
   ~DSVG_dev() {
-    if (ok())
+    if (ok()) {
+      if (doc_) {
+        add_styles();
+        svg_to_file(doc_, file, false);
+        delete(element_map_);
+        delete(css_map_);
+        delete(doc_);
+      }
       fclose(file);
+    }
+  }
+
+private:
+  SVGDocument* doc_;
+  SVGElement* root_;
+  SVGElement* root_g_;
+  std::unordered_map<int, SVGElement*>* element_map_;
+  std::unordered_map<std::string, std::string>* css_map_;
+
+  void add_styles() {
+    if (css_map_->size() > 0) {
+      SVGElement* styleEl = new_svg_element("style", doc_);
+      prepend_element(styleEl, root_);
+      std::stringstream os;
+      for ( auto it = css_map_->begin(); it != css_map_->end(); ++it ) {
+        os << it->second;
+      }
+      svg_text(os.str().c_str(), styleEl, true);
+    }
   }
 };
 
@@ -225,22 +308,18 @@ static void dsvg_clip(double x0, double x1, double y0, double y1, pDevDesc dd) {
 
   svgd->new_clip();
 
-  fputs("<defs>", svgd->file);
-  fprintf(svgd->file, "<clipPath id='%s'>", svgd->clip_id.c_str() );
-  fprintf(svgd->file, "<rect x='%.2f' y='%.2f' width='%.2f' height='%.2f'/>",
-          std::min(x0, x1), std::min(y0, y1),
-          std::abs(x1 - x0),
-          std::abs(y1 - y0) );
-  fputs("</clipPath>", svgd->file);
-  fputs("</defs>", svgd->file);
+  SVGElement* defs = svgd->svg_element("defs", false);
+  SVGElement* clipPath = svgd->svg_element("clipPath", false, defs);
+  set_attr(clipPath, "id", svgd->clip_id.c_str());
+  SVGElement* rect = svgd->svg_element("rect", false, clipPath);
+  set_attr(rect, "x", format(std::min(x0, x1)));
+  set_attr(rect, "y", format(std::min(y0, y1)));
+  set_attr(rect, "width", format(std::abs(x1 - x0)));
+  set_attr(rect, "height", format(std::abs(y1 - y0)));
 }
 
 static void dsvg_close(pDevDesc dd) {
   DSVG_dev *svgd = (DSVG_dev*) dd->deviceSpecific;
-
-  if (svgd->pageno > 0)
-    fputs("</g></svg>\n", svgd->file);
-
   delete(svgd);
 }
 
@@ -249,15 +328,15 @@ static void dsvg_line(double x1, double y1, double x2, double y2,
   DSVG_dev *svgd = (DSVG_dev*) dd->deviceSpecific;
   svgd->new_element();
 
-  fprintf(svgd->file, "<line x1='%.2f' y1='%.2f' x2='%.2f' y2='%.2f' id='%s'",
-    x1, y1, x2, y2, svgd->element_id.c_str());
-  fprintf(svgd->file, " clip-path='url(#%s)'", svgd->clip_id.c_str());
-  std::string line_style_ = line_style(gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
-  fprintf(svgd->file, "%s", line_style_.c_str());
-  a_color col_(gc->fill);
-  fprintf(svgd->file, "%s", col_.svg_fill_attr().c_str());
-
-  fputs("/>", svgd->file);
+  SVGElement* line = svgd->svg_element("line", true);
+  set_attr(line, "x1", format(x1));
+  set_attr(line, "y1", format(y1));
+  set_attr(line, "x2", format(x2));
+  set_attr(line, "y2", format(y2));
+  set_attr(line, "id", svgd->element_id.c_str());
+  set_attr(line, "clip-path", format("url(#%s)", svgd->clip_id.c_str()));
+  set_stroke(line, gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
+  set_fill(line, gc->fill);
 }
 
 static void dsvg_polyline(int n, double *x, double *y, const pGEcontext gc,
@@ -265,42 +344,36 @@ static void dsvg_polyline(int n, double *x, double *y, const pGEcontext gc,
   DSVG_dev *svgd = (DSVG_dev*) dd->deviceSpecific;
   svgd->new_element();
 
-  fputs("<polyline points='", svgd->file);
-  fprintf(svgd->file, "%.2f,%.2f", x[0], y[0]);
+  SVGElement* polyline = svgd->svg_element("polyline", true);
+
+  std::stringstream os;
+  os << format(x[0]) << "," << format(y[0]);
   for (int i = 1; i < n; i++) {
-    fprintf(svgd->file, " %.2f,%.2f", x[i], y[i]);
+    os << " " << format(x[i]) << "," << format(y[i]);
   }
-  fputs("'", svgd->file);
-  fprintf(svgd->file, " id='%s'", svgd->element_id.c_str());
-  fprintf(svgd->file, " clip-path='url(#%s)'", svgd->clip_id.c_str());
-  fputs(" fill=\"none\"", svgd->file);
-
-  std::string line_style_ = line_style(gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
-  fprintf(svgd->file, "%s", line_style_.c_str());
-
-  fputs("/>", svgd->file);
+  set_attr(polyline, "points", os.str().c_str());
+  set_attr(polyline, "id", svgd->element_id.c_str());
+  set_attr(polyline, "clip-path", format("url(#%s)", svgd->clip_id.c_str()));
+  set_attr(polyline, "fill", "none");
+  set_stroke(polyline, gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
 }
 static void dsvg_polygon(int n, double *x, double *y, const pGEcontext gc,
                         pDevDesc dd) {
   DSVG_dev *svgd = (DSVG_dev*) dd->deviceSpecific;
   svgd->new_element();
 
-  fputs("<polygon points='", svgd->file);
-  fprintf(svgd->file, "%.2f,%.2f", x[0], y[0]);
+  SVGElement* polygon = svgd->svg_element("polygon", true);
+
+  std::stringstream os;
+  os << format(x[0]) << "," << format(y[0]);
   for (int i = 1; i < n; i++) {
-    fprintf(svgd->file, " %.2f,%.2f", x[i], y[i]);
+    os << " " << format(x[i]) << "," << format(y[i]);
   }
-  fputs("'", svgd->file);
-  fprintf(svgd->file, " id='%s'", svgd->element_id.c_str());
-  fprintf(svgd->file, " clip-path='url(#%s)'", svgd->clip_id.c_str());
-
-  a_color col_(gc->fill);
-  fprintf(svgd->file, "%s", col_.svg_fill_attr().c_str());
-
-  std::string line_style_ = line_style(gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
-  fprintf(svgd->file, "%s", line_style_.c_str());
-
-  fputs("/>", svgd->file);
+  set_attr(polygon, "points", os.str().c_str());
+  set_attr(polygon, "id", svgd->element_id.c_str());
+  set_attr(polygon, "clip-path", format("url(#%s)", svgd->clip_id.c_str()));
+  set_fill(polygon, gc->fill);
+  set_stroke(polygon, gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
 }
 
 void dsvg_path(double *x, double *y,
@@ -311,30 +384,29 @@ void dsvg_path(double *x, double *y,
   svgd->new_element();
   int index = 0;
 
-  fputs("<path d='", svgd->file);
+  SVGElement* path = svgd->svg_element("path", true);
+
+  std::stringstream os;
   for (int i = 0; i < npoly; i++) {
-    fprintf(svgd->file, "M %.2f %.2f ", x[index], y[index]);
+    os <<  format("M %.2f %.2f ", x[index], y[index]);
     index++;
     for (int j = 1; j < nper[i]; j++) {
-      fprintf(svgd->file, "L %.2f %.2f ", x[index], y[index]);
+      os <<  format("L %.2f %.2f ", x[index], y[index]);
       index++;
     }
-    fputs("Z ", svgd->file);
+    os << "Z ";
   }
-  fprintf(svgd->file, "' id='%s'", svgd->element_id.c_str());
-  fprintf(svgd->file, " clip-path='url(#%s)'", svgd->clip_id.c_str());
-
-  a_color fill_(gc->fill);
-  fprintf(svgd->file, "%s", fill_.svg_fill_attr().c_str());
+  set_attr(path, "d", os.str().c_str());
+  set_attr(path, "id", svgd->element_id.c_str());
+  set_attr(path, "clip-path", format("url(#%s)", svgd->clip_id.c_str()));
+  set_fill(path, gc->fill);
 
   if (winding)
-    fputs(" fill-rule='nonzero'", svgd->file);
+    set_attr(path, "fill-rule", "nonzero");
   else
-    fputs(" fill-rule='evenodd'", svgd->file);
+    set_attr(path, "fill-rule", "evenodd");
 
-  std::string line_style_ = line_style(gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
-  fprintf(svgd->file, "%s", line_style_.c_str());
-  fputs("/>", svgd->file);
+  set_stroke(path, gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
 }
 
 static double dsvg_strwidth_utf8(const char *str, const pGEcontext gc, pDevDesc dd) {
@@ -355,18 +427,15 @@ static void dsvg_rect(double x0, double y0, double x1, double y1,
   DSVG_dev *svgd = (DSVG_dev*) dd->deviceSpecific;
   svgd->new_element();
 
-  fprintf(svgd->file,
-      "<rect x='%.2f' y='%.2f' width='%.2f' height='%.2f'",
-      fmin(x0, x1), fmin(y0, y1), fabs(x1 - x0), fabs(y1 - y0));
-  fprintf(svgd->file, " id='%s'", svgd->element_id.c_str());
-  fprintf(svgd->file, " clip-path='url(#%s)'", svgd->clip_id.c_str());
-
-  a_color fill_(gc->fill);
-  fprintf(svgd->file, "%s", fill_.svg_fill_attr().c_str());
-  std::string line_style_ = line_style(gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
-  fprintf(svgd->file, "%s", line_style_.c_str());
-
-  fputs("/>", svgd->file);
+  SVGElement* rect = svgd->svg_element("rect", true);
+  set_attr(rect, "x", format(fmin(x0, x1)));
+  set_attr(rect, "y", format(fmin(y0, y1)));
+  set_attr(rect, "width", format(fabs(x1 - x0)));
+  set_attr(rect, "height", format(fabs(y1 - y0)));
+  set_attr(rect, "id", svgd->element_id.c_str());
+  set_attr(rect, "clip-path", format("url(#%s)", svgd->clip_id.c_str()));
+  set_fill(rect, gc->fill);
+  set_stroke(rect, gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
 }
 
 static void dsvg_circle(double x, double y, double r, const pGEcontext gc,
@@ -374,14 +443,14 @@ static void dsvg_circle(double x, double y, double r, const pGEcontext gc,
   DSVG_dev *svgd = (DSVG_dev*) dd->deviceSpecific;
   svgd->new_element();
 
-  fprintf(svgd->file, "<circle cx='%.2f' cy='%.2f' r='%.2fpt'", x, y, r * .75 );
-  fprintf(svgd->file, " id='%s'", svgd->element_id.c_str());
-  fprintf(svgd->file, " clip-path='url(#%s)'", svgd->clip_id.c_str());
-  a_color fill_(gc->fill);
-  fprintf(svgd->file, "%s", fill_.svg_fill_attr().c_str());
-  std::string line_style_ = line_style(gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
-  fprintf(svgd->file, "%s", line_style_.c_str());
-  fputs("/>", svgd->file);
+  SVGElement* circle = svgd->svg_element("circle", true);
+  set_attr(circle, "cx", format(x));
+  set_attr(circle, "cy", format(y));
+  set_attr(circle, "r", format("%.2fpt",r * .75));
+  set_attr(circle, "id", svgd->element_id.c_str());
+  set_attr(circle, "clip-path", format("url(#%s)", svgd->clip_id.c_str()));
+  set_fill(circle, gc->fill);
+  set_stroke(circle, gc->lwd, gc->col, gc->lty, gc->ljoin, gc->lend);
 }
 
 static void dsvg_text_utf8(double x, double y, const char *str, double rot,
@@ -389,43 +458,30 @@ static void dsvg_text_utf8(double x, double y, const char *str, double rot,
   DSVG_dev *svgd = (DSVG_dev*) dd->deviceSpecific;
   svgd->new_element();
 
-  fprintf(svgd->file, "<g clip-path='url(#%s)'>", svgd->clip_id.c_str());
+  SVGElement* g = svgd->svg_element("g", false);
+  set_attr(g, "clip-path", format("url(#%s)", svgd->clip_id.c_str()));
+  SVGElement* text = svgd->svg_element("text", true, g);
 
-  fputs("<text", svgd->file);
   if (rot == 0) {
-    fprintf(svgd->file, " x='%.2f' y='%.2f'", x, y);
+    set_attr(text, "x", format(x));
+    set_attr(text, "y", format(y));
   } else {
-    fprintf(svgd->file, " transform='translate(%.2f,%.2f) rotate(%0.0f)'", x, y,
-      -1.0 * rot);
+    set_attr(text, "transform", format("translate(%.2f,%.2f) rotate(%0.0f)", x, y, -1.0 * rot));
   }
-  fprintf(svgd->file, " id='%s'", svgd->element_id.c_str());
-  fprintf(svgd->file, " font-size='%.2fpt'", gc->cex * gc->ps * .75 );
+  set_attr(text, "id", svgd->element_id.c_str());
+  set_attr(text, "font-size", format("%.2fpt", gc->cex * gc->ps * .75));
   if (is_bold(gc->fontface))
-    fputs(" font-weight='bold'", svgd->file);
+    set_attr(text, "font-weight", "bold");
   if (is_italic(gc->fontface))
-    fputs(" font-style='italic'", svgd->file);
+    set_attr(text, "font-style", "italic");
   if (gc->col != -16777216){
-    a_color fill_(gc->col);
-    fprintf(svgd->file, "%s", fill_.svg_fill_attr().c_str());
+    set_fill(text, gc->col);
   } // black
 
   std::string font = fontname(gc->fontfamily, gc->fontface, svgd->system_aliases, svgd->user_aliases);
+  set_attr(text, "font-family", font.c_str());
 
-  fprintf(svgd->file, " font-family='%s'", font.c_str());
-
-  fputs(">", svgd->file);
-
-  for(const char* cur = str; *cur != '\0'; ++cur) {
-    switch(*cur) {
-    case '&': fputs("&amp;", svgd->file); break;
-    case '<': fputs("&lt;",  svgd->file); break;
-    case '>': fputs("&gt;",  svgd->file); break;
-    default:  fputc(*cur,    svgd->file);
-    }
-  }
-
-  fputs("</text>", svgd->file);
-  fputs("</g>", svgd->file);
+  text->SetText(str);
 }
 
 static void dsvg_text(double x, double y, const char *str, double rot,
@@ -461,19 +517,24 @@ static void dsvg_raster(unsigned int *raster, int w, int h,
 
   std::string base64_str = gdtools::raster_to_str(raster_, w, h, width*(25/6), height*(25/6), interpolate);
 
-  fprintf(svgd->file, "<image x='%.2f' y='%.2f' ", x, y - height );
-  fprintf(svgd->file, "width='%.2f' height='%.2f' ", width, height);
-  fprintf(svgd->file, "id='%s' ", svgd->element_id.c_str());
-  fprintf(svgd->file, "clip-path='url(#%s)' ", svgd->clip_id.c_str());
+  SVGElement* image = svgd->svg_element("image", true);
+  set_attr(image, "x", format(x));
+  set_attr(image, "y", format(y - height));
+  set_attr(image, "width", format(width));
+  set_attr(image, "height", format(height));
+  set_attr(image, "id", svgd->element_id.c_str());
+  set_attr(image, "clip-path", format("url(#%s)", svgd->clip_id.c_str()));
 
   if (fabs(rot)>0.001) {
-    fprintf(svgd->file, "transform='rotate(%0.0f,%0.0f,%0.0f)' ", -1.0 * rot, x, y );
+    set_attr(image, "transform", format("rotate(%0.0f,%0.0f,%0.0f)", -1.0 * rot, x, y));
   }
-  fprintf(svgd->file, "xlink:href='data:image/png;base64,%s'", base64_str.c_str());
-  if (svgd->standalone) fputs( " xmlns:xlink='http://www.w3.org/1999/xlink'", svgd->file);
-  fputs( "/>", svgd->file);
 
+  std::stringstream os;
+  os << "data:image/png;base64," << base64_str.c_str();
+  set_attr(image, "xlink:href", os.str().c_str());
 
+  if (svgd->standalone)
+    set_attr(image, "xmlns:xlink", "http://www.w3.org/1999/xlink");
 }
 
 static void dsvg_new_page(const pGEcontext gc, pDevDesc dd) {
@@ -483,20 +544,11 @@ static void dsvg_new_page(const pGEcontext gc, pDevDesc dd) {
     Rf_error("svgd only supports one page");
   }
 
-  if (svgd->standalone)
-    fputs("<?xml version='1.0' encoding='UTF-8'?>\n", svgd->file);
-
-  fputs("<svg ", svgd->file);
-  if (svgd->standalone){
-    fputs("xmlns='http://www.w3.org/2000/svg' ", svgd->file);
-    fputs("xmlns:xlink='http://www.w3.org/1999/xlink' ", svgd->file);
-  }
-
-  fprintf(svgd->file, "id='%s' ", svgd->canvas_id.c_str());
-  fprintf(svgd->file, "viewBox='0 0 %.2f %.2f' ", dd->right, dd->bottom);
-  fprintf(svgd->file, "width='%.2f' ", dd->right);
-  fprintf(svgd->file, "height='%.2f'", dd->bottom);
-  fputs("><g>", svgd->file);
+  SVGElement* root = svgd->svg_root();
+  set_attr(root, "id", svgd->canvas_id.c_str());
+  set_attr(root, "viewBox", format("0 0 %.2f %.2f", dd->right, dd->bottom));
+  set_attr(root, "width", format(dd->right));
+  set_attr(root, "height", format(dd->bottom));
 
   int bg_fill, fill, col;
   a_color bg_temp(gc->fill);
@@ -521,8 +573,8 @@ static void dsvg_new_page(const pGEcontext gc, pDevDesc dd) {
 
 
 pDevDesc dsvg_driver_new(std::string filename, int bg, double width,
-                        double height, int pointsize, bool standalone, std::string canvas_id,
-                        Rcpp::List aliases) {
+                        double height, int pointsize, bool standalone,
+                        std::string canvas_id, Rcpp::List aliases) {
 
   pDevDesc dd = (DevDesc*) calloc(1, sizeof(DevDesc));
   if (dd == NULL)
@@ -670,6 +722,43 @@ Rcpp::IntegerVector collect_id(int dn) {
   return R_NilValue;
 }
 
+std::string compile_css(const std::string& cls_prefix,
+                        const char * cls_suffix,
+                        const std::string& canvas_id,
+                        const char * data_attr,
+                        const char * data_value,
+                        const char * css) {
+  std::stringstream cls_s;
+  cls_s << cls_prefix << cls_suffix << canvas_id << "[" << data_attr << " = \"" << data_value << "\"]" ;
+  std::stringstream css_s;
+
+  // we have to live without regex :(
+  size_t slen = strlen(css) + 1 ;
+  char * buffer = new char[slen];
+  strncpy(buffer, css, slen);
+
+  const char * pattern = "_CLASSNAME_";
+  size_t plen = strlen(pattern);
+
+  char * current = buffer;
+  char * pch = strstr (current, pattern);
+  while (pch != NULL)
+  {
+    // discard pattern chars
+    memset(pch, 0, plen);
+    // copy chars from current pos and real classname
+    css_s << current << cls_s.str();
+    // advance current position
+    current = pch + plen;
+    pch = strstr (current, pattern);
+  }
+  // copy the remainder
+  if (current != NULL) {
+    css_s << current;
+  }
+  return css_s.str();
+}
+
 
 // [[Rcpp::export]]
 bool add_attribute(int dn, Rcpp::IntegerVector id,
@@ -682,10 +771,65 @@ bool add_attribute(int dn, Rcpp::IntegerVector id,
 
   DSVG_dev *svgd = (DSVG_dev *) dev->dev->deviceSpecific;
 
+  std::string hover("hover_css");
+  std::string selected("selected_css");
+  std::string cls_prefix("");
+
   for( int i = 0 ; i < nb_elts ; i++ ){
-    fprintf(svgd->file, "<comment target='%d' attr='%s'><![CDATA[%s]]></comment>",
-            id[i], name.c_str(), str[i].c_str());
+    if (str[i].length() == 0)
+      continue;
+
+    SVGElement* el = svgd->get_svg_element(id[i]);
+    if (el != NULL) {
+      const bool isHoverCss = hover.compare(name) == 0;
+      const bool isSelectedCss = selected.compare(name) == 0;
+      if (isHoverCss || isSelectedCss) {
+        if (isHoverCss) {
+          cls_prefix.assign("hover_");
+        } else {
+          cls_prefix.assign("selected_");
+        }
+        const char * data_id = svg_attribute(el, "data-id");
+        if (data_id != NULL) {
+          std::string css = compile_css(cls_prefix,
+                                        "",
+                                        svgd->canvas_id,
+                                        "data-id",
+                                        data_id,
+                                        str[i].c_str());
+          if (css.length() > 0)
+            svgd->add_css(std::string(cls_prefix + "_data_id_" + data_id), css);
+          continue;
+        }
+        const char * key_id = svg_attribute(el, "key-id");
+        if (key_id != NULL) {
+          std::string css = compile_css(cls_prefix,
+                                        "key_",
+                                        svgd->canvas_id,
+                                        "key-id",
+                                        key_id,
+                                        str[i].c_str());
+          if (css.length() > 0)
+            svgd->add_css(std::string(cls_prefix + "_key_id_" + key_id), css);
+          continue;
+        }
+        const char * theme_id = svg_attribute(el, "theme-id");
+        if (theme_id != NULL) {
+          std::string css = compile_css(cls_prefix,
+                                        "theme_",
+                                        svgd->canvas_id,
+                                        "theme-id",
+                                        theme_id,
+                                        str[i].c_str());
+          if (css.length() > 0)
+            svgd->add_css(std::string(cls_prefix + "_theme_id_" + theme_id), css);
+          continue;
+        }
+
+      } else {
+        set_attr(el, name.c_str(), str[i].c_str());
+      }
+    }
   }
   return true;
 }
-
