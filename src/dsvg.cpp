@@ -379,6 +379,7 @@ static void dsvg_polygon(int n, double *x, double *y, const pGEcontext gc,
   SVGElement* polygon = svgd->svg_element("polygon", true);
 
   std::stringstream os;
+  os.flags(std::ios_base::fixed | std::ios_base::dec);
   os.precision(2);
   os << x[0] << "," << y[0];
   for (int i = 1; i < n; i++) {
