@@ -361,9 +361,11 @@ static void dsvg_polyline(int n, double *x, double *y, const pGEcontext gc,
   SVGElement* polyline = svgd->svg_element("polyline", true);
 
   std::stringstream os;
-  os << format(x[0]) << "," << format(y[0]);
+  os.flags(std::ios_base::fixed | std::ios_base::dec);
+  os.precision(2);
+  os << x[0] << "," << y[0];
   for (int i = 1; i < n; i++) {
-    os << " " << format(x[i]) << "," << format(y[i]);
+    os << " " << x[i] << "," << y[i];
   }
   set_attr(polyline, "points", os.str().c_str());
   set_attr(polyline, "id", svgd->element_id.c_str());
@@ -403,11 +405,12 @@ void dsvg_path(double *x, double *y,
   SVGElement* path = svgd->svg_element("path", true);
 
   std::stringstream os;
+  os.flags(std::ios_base::fixed | std::ios_base::dec);
   for (int i = 0; i < npoly; i++) {
-    os <<  format("M %.2f %.2f ", x[index], y[index]);
+    os << "M " << x[index] << " " << y[index] << " ";
     index++;
     for (int j = 1; j < nper[i]; j++) {
-      os <<  format("L %.2f %.2f ", x[index], y[index]);
+      os << "L " << x[index] << " " << y[index] << " ";
       index++;
     }
     os << "Z ";
