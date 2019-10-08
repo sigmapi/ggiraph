@@ -379,9 +379,9 @@ static void dsvg_polygon(int n, double *x, double *y, const pGEcontext gc,
   SVGElement* polygon = svgd->svg_element("polygon", true);
 
   std::stringstream os;
-  os << format(x[0]) << "," << format(y[0]);
+  os << " " << format(x[0]) << " , " << format(y[0]) << " ";
   for (int i = 1; i < n; i++) {
-    os << " " << format(x[i]) << "," << format(y[i]);
+    os << " " << format(x[i]) << " , " << format(y[i])  << " ";
   }
   set_attr(polygon, "points", os.str().c_str());
   set_attr(polygon, "id", svgd->element_id.c_str());
